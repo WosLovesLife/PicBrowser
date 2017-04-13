@@ -1,73 +1,124 @@
 package com.example.leonard.picbrowser;
 
-import android.graphics.drawable.ColorDrawable;
-import android.os.Build;
-import android.os.Bundle;
-import android.os.PersistableBundle;
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.support.annotation.AttrRes;
+import android.support.annotation.DrawableRes;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.support.v4.view.PagerAdapter;
 import android.support.v4.view.ViewPager;
-import android.support.v7.app.AppCompatActivity;
-import android.transition.ChangeBounds;
+import android.support.v7.widget.RecyclerView;
+import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
-import android.view.ViewGroup;
-import android.widget.ImageView;
+import android.widget.FrameLayout;
 
-import java.util.ArrayList;
+import com.alexvasilkov.gestures.animation.ViewPosition;
+import com.alexvasilkov.gestures.animation.ViewPositionAnimator.PositionUpdateListener;
+import com.alexvasilkov.gestures.commons.DepthPageTransformer;
+import com.alexvasilkov.gestures.commons.RecyclePagerAdapter;
+import com.alexvasilkov.gestures.transition.GestureTransitions;
+import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator;
+import com.alexvasilkov.gestures.transition.tracker.SimpleTracker;
+
 import java.util.List;
 
 /**
- * Created by leonard on 17/4/13.
+ * Separate activity for fullscreen image. This activity should have translucent background
+ * and should skip enter and exit animations.
  */
+public class PhotoBrowser extends FrameLayout {
+    private ViewPager.SimpleOnPageChangeListener pagerListener;
 
-public class PhotoBrowser extends AppCompatActivity {
-    private ArrayList<Integer> mPhoto;
-    private int mSelect;
+    private ViewsTransitionAnimator<Integer> animator;
+
     private ViewPager mViewPager;
+    private View mBgView;
 
-    @Override
-    public void onCreate(@Nullable Bundle savedInstanceState, @Nullable PersistableBundle persistentState) {
-        super.onCreate(savedInstanceState, persistentState);
-        setContentView(R.layout.photo_browser);
+    private PhotoPagerAdapter pagerAdapter;
 
-        mPhoto = getIntent().getIntegerArrayListExtra("photo");
-        mSelect = getIntent().getIntExtra("select", 0);
-
-        Adapter adapter = new Adapter();
-        mViewPager = (ViewPager) findViewById(R.id.vp);
-        mViewPager.setAdapter(adapter);
-        mViewPager.setCurrentItem(mSelect);
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            getWindow().setSharedElementEnterTransition(new ChangeBounds());
-        }
+    public PhotoBrowser(@NonNull Context context) {
+        this(context, null);
     }
 
-    class Adapter extends PagerAdapter {
-        List<Integer> data;
+    public PhotoBrowser(@NonNull Context context, @Nullable AttributeSet attrs) {
+        this(context, attrs, 0);
+    }
 
-        @Override
-        public int getCount() {
-            return data != null ? data.size() : 0;
-        }
+    public PhotoBrowser(@NonNull Context context, @Nullable AttributeSet attrs, @AttrRes int defStyleAttr) {
+        super(context, attrs, defStyleAttr);
 
-        @Override
-        public boolean isViewFromObject(View view, Object object) {
-            return view == object;
-        }
+        onCreate();
+    }
 
-        @Override
-        public Object instantiateItem(ViewGroup container, int position) {
-            ImageView iv = (ImageView) LayoutInflater.from(container.getContext()).inflate(R.layout.item_photo_browser, container, false);
-            container.addView(iv);
-            iv.setImageDrawable(new ColorDrawable(data.get(position)));
-            return iv;
-        }
+    public static void open(Activity from, ViewPosition position, @DrawableRes int imageId) {
+    }
 
-        @Override
-        public void destroyItem(ViewGroup container, int position, Object object) {
-            container.removeView((View) object);
+    protected void onCreate() {
+        LayoutInflater.from(getContext()).inflate(R.layout.photo_browser, this, true);
+
+        mViewPager = (ViewPager) findViewById(R.id.vp);
+        mBgView = findViewById(R.id.view_bg);
+
+        initPager();
+    }
+
+    private void initPager() {
+        // Setting up pager views
+        pagerAdapter = new PhotoPagerAdapter(mViewPager);
+
+        pagerListener = new ViewPager.SimpleOnPageChangeListener() {
+            @Override
+            public void onPageSelected(int position) {
+//                onPhotoInPagerSelected(position);
+            }
+        };
+
+        mViewPager.setAdapter(pagerAdapter);
+        mViewPager.addOnPageChangeListener(pagerListener);
+        mViewPager.setPageTransformer(true, new DepthPageTransformer());
+    }
+
+    public void initAnimator(RecyclerView from, SimpleTracker tracker) {
+        final SimpleTracker pagerTracker = new SimpleTracker() {
+            @Override
+            public View getViewAt(int pos) {
+                RecyclePagerAdapter.ViewHolder holder = pagerAdapter.getViewHolder(pos);
+                return holder == null ? null : PhotoPagerAdapter.getImage(holder);
+            }
+        };
+
+        animator = GestureTransitions.from(from, tracker).into(mViewPager, pagerTracker);
+        animator.addPositionUpdateListener(new PositionUpdateListener() {
+            @Override
+            public void onPositionUpdate(float position, boolean isLeaving) {
+                mBgView.setVisibility(position == 0f ? View.INVISIBLE : View.VISIBLE);
+                mBgView.getBackground().setAlpha((int) (255 * position));
+                if (isLeaving && position == 0f) {
+                    pagerAdapter.setActivated(false);
+                }
+            }
+        });
+    }
+
+    public void setData(List<Photo> photos) {
+        pagerAdapter.setPhotos(photos);
+
+        // Ensure listener called for 0 position
+        pagerListener.onPageSelected(mViewPager.getCurrentItem());
+    }
+
+    public void show(int position) {
+        pagerAdapter.setActivated(true);
+        animator.enter(position, true);
+    }
+
+    public boolean onBackPressed() {
+        if (!animator.isLeaving()) {
+            animator.exit(true);
+            return true;
         }
+        return false;
     }
 }

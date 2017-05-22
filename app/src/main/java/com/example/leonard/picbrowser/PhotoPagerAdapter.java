@@ -1,7 +1,10 @@
 package com.example.leonard.picbrowser;
 
+import android.graphics.Bitmap;
+import android.net.Uri;
 import android.support.annotation.NonNull;
 import android.support.v4.view.ViewPager;
+import android.text.TextUtils;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -54,60 +57,58 @@ public class PhotoPagerAdapter extends RecyclePagerAdapter<PhotoPagerAdapter.Vie
 
     @Override
     public ViewHolder onCreateViewHolder(@NonNull ViewGroup container) {
-        final ViewHolder holder = new ViewHolder(container);
-
-        holder.image.getController().getSettings()
-                .setMaxZoom(10f)
-                .setDoubleTapZoom(3f);
-
-        holder.image.getController().enableScrollInViewPager(viewPager);
-        holder.image.getPositionAnimator().addPositionUpdateListener(new PositionUpdateListener() {
-            @Override
-            public void onPositionUpdate(float position, boolean isLeaving) {
-                holder.progress.setVisibility(position == 1f ? View.VISIBLE : View.INVISIBLE);
-            }
-        });
-        return holder;
+        return new ViewHolder(container);
     }
 
     @Override
     public void onBindViewHolder(@NonNull final ViewHolder holder, int position) {
         // Temporary disabling touch controls
         if (!holder.gesturesDisabled) {
-            holder.image.getController().getSettings().disableGestures();
+            holder.image.getGestureController().getSettings().disableGestures();
             holder.gesturesDisabled = true;
         }
+        holder.image.getGestureController().resetState();
 
         holder.progress.animate().setStartDelay(PROGRESS_DELAY).alpha(1f);
 
         Photo photo = photos.get(position);
 
         // Loading image
-//        holder.image.setImageResource(photo.res);
+        if (photo.res > 0) { // from drawable res or color res
+
+            holder.image.setImageResource(photo.res);
+        } else if (!TextUtils.isEmpty(photo.url)) { // from url
+            Bitmap cacheBitmap = PhotoBrowser.getCacheBitmap(Uri.parse(photo.url));
+            if (cacheBitmap != null) {
+                holder.image.setImageBitmap(cacheBitmap);
+            } else {
+                // todo download the image
+                holder.image.setImageResource(R.drawable.img);
+            }
+        } else { // place holder
+            holder.image.setImageResource(R.drawable.img);
+        }
     }
 
     @Override
     public void onRecycleViewHolder(@NonNull ViewHolder holder) {
         super.onRecycleViewHolder(holder);
-
         if (holder.gesturesDisabled) {
-            holder.image.getController().getSettings().enableGestures();
+            holder.image.getGestureController().getSettings().enableGestures();
             holder.gesturesDisabled = false;
         }
 
         //clear image
-
         holder.progress.animate().cancel();
         holder.progress.setAlpha(0f);
-
-//        holder.image.setImageDrawable(null);
+        holder.image.setImageDrawable(null);
     }
 
-    public static GestureImageView getImage(RecyclePagerAdapter.ViewHolder holder) {
+    public static GestureImageView getGestureView(RecyclePagerAdapter.ViewHolder holder) {
         return ((ViewHolder) holder).image;
     }
 
-    static class ViewHolder extends RecyclePagerAdapter.ViewHolder {
+    class ViewHolder extends RecyclePagerAdapter.ViewHolder {
         GestureImageView image;
         View progress;
 
@@ -115,9 +116,18 @@ public class PhotoPagerAdapter extends RecyclePagerAdapter<PhotoPagerAdapter.Vie
 
         ViewHolder(ViewGroup parent) {
             super(LayoutInflater.from(parent.getContext()).inflate(R.layout.item, parent, false));
-            image = (GestureImageView) itemView.findViewById(R.id.cross_to);
-            image.getController().getSettings().enableGestures();
             progress = itemView.findViewById(R.id.pb);
+            image = (GestureImageView) itemView.findViewById(R.id.cross_to);
+            image.getGestureController().getSettings().enableGestures();
+            image.getGestureController().enableScrollInViewPager(viewPager);
+            image.getGestureController().getSettings().setAnimationsDuration(3000);
+            image.getGestureController().getSettings().setMaxZoom(10f).setDoubleTapZoom(3f);
+            image.getPositionAnimator().addPositionUpdateListener(new PositionUpdateListener() {
+                @Override
+                public void onPositionUpdate(float position, boolean isLeaving) {
+                    progress.setVisibility(position == 1f ? View.VISIBLE : View.INVISIBLE);
+                }
+            });
         }
     }
 

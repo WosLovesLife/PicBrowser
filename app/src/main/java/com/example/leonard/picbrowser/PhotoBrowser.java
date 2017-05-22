@@ -1,27 +1,33 @@
 package com.example.leonard.picbrowser;
 
-import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
+import android.net.Uri;
 import android.support.annotation.AttrRes;
-import android.support.annotation.DrawableRes;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.view.ViewPager;
-import android.support.v7.widget.RecyclerView;
 import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
 
-import com.alexvasilkov.gestures.animation.ViewPosition;
 import com.alexvasilkov.gestures.animation.ViewPositionAnimator.PositionUpdateListener;
 import com.alexvasilkov.gestures.commons.DepthPageTransformer;
 import com.alexvasilkov.gestures.commons.RecyclePagerAdapter;
 import com.alexvasilkov.gestures.transition.GestureTransitions;
 import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator;
 import com.alexvasilkov.gestures.transition.tracker.SimpleTracker;
+import com.facebook.binaryresource.FileBinaryResource;
+import com.facebook.cache.common.SimpleCacheKey;
+import com.facebook.drawee.backends.pipeline.Fresco;
 
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.List;
 
 /**
@@ -52,10 +58,7 @@ public class PhotoBrowser extends FrameLayout {
         onCreate();
     }
 
-    public static void open(Activity from, ViewPosition position, @DrawableRes int imageId) {
-    }
-
-    protected void onCreate() {
+    private void onCreate() {
         LayoutInflater.from(getContext()).inflate(R.layout.photo_browser, this, true);
 
         mViewPager = (ViewPager) findViewById(R.id.vp);
@@ -78,18 +81,19 @@ public class PhotoBrowser extends FrameLayout {
         mViewPager.setAdapter(pagerAdapter);
         mViewPager.addOnPageChangeListener(pagerListener);
         mViewPager.setPageTransformer(true, new DepthPageTransformer());
+        mViewPager.setPageTransformer(true, new DepthPageTransformer());
     }
 
-    public void initAnimator(RecyclerView from, SimpleTracker tracker) {
+    public void initAnimator(GestureTransitions<Integer> from) {
         final SimpleTracker pagerTracker = new SimpleTracker() {
             @Override
             public View getViewAt(int pos) {
                 RecyclePagerAdapter.ViewHolder holder = pagerAdapter.getViewHolder(pos);
-                return holder == null ? null : PhotoPagerAdapter.getImage(holder);
+                return holder == null ? null : PhotoPagerAdapter.getGestureView(holder);
             }
         };
 
-        animator = GestureTransitions.from(from, tracker).into(mViewPager, pagerTracker);
+        animator = from.into(mViewPager, pagerTracker);
         animator.addPositionUpdateListener(new PositionUpdateListener() {
             @Override
             public void onPositionUpdate(float position, boolean isLeaving) {
@@ -120,5 +124,34 @@ public class PhotoBrowser extends FrameLayout {
             return true;
         }
         return false;
+    }
+
+
+    public static Bitmap getCacheBitmap(Uri uri) {
+        Bitmap bitmap = null;
+        Fresco.getImagePipelineFactory().getBitmapMemoryCache().get(new SimpleCacheKey(uri.toString()));
+
+        FileBinaryResource resource = (FileBinaryResource) Fresco.getImagePipelineFactory().getMainFileCache().getResource(new SimpleCacheKey(uri.toString()));
+        if (resource == null) {
+            return null;
+        }
+        File file = resource.getFile();
+        BufferedInputStream inputStream = null;
+        try {
+            inputStream = new BufferedInputStream(new FileInputStream(file));
+            bitmap = BitmapFactory.decodeStream(inputStream);
+        } catch (FileNotFoundException e) {
+            e.printStackTrace();
+        } finally {
+            if (inputStream != null) {
+                try {
+                    inputStream.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+        return bitmap;
+
     }
 }

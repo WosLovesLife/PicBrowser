@@ -1,6 +1,7 @@
 package com.example.leonard.picbrowser;
 
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
@@ -11,7 +12,10 @@ import android.view.ViewGroup;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
-import com.alexvasilkov.gestures.transition.tracker.SimpleTracker;
+import com.alexvasilkov.gestures.transition.GestureTransitions;
+import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator;
+import com.alexvasilkov.gestures.views.GestureImageView;
+import com.facebook.drawee.view.SimpleDraweeView;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -21,6 +25,16 @@ import java.util.List;
  */
 
 public class MultiPhotoActivity extends AppCompatActivity {
+
+    String[] ADDRESS = {
+            "http://wx2.sinaimg.cn/mw690/707e96d5gy1ffo4d9sf3jj20qp0gpn2q.jpg",
+            "http://wx2.sinaimg.cn/mw690/707e96d5gy1ffo4da51kyj20go09cgn9.jpg",
+            "http://wx2.sinaimg.cn/mw690/005Bd8p4gy1ffmm2o5v13j30sg0lcn0b.jpg",
+            "http://wx1.sinaimg.cn/mw690/697b3ffbly1ffo5ok606vj20dw0hu77h.jpg",
+            "http://wx4.sinaimg.cn/mw690/697b3ffbly1ffo5ojxwelj20im0ahgof.jpg",
+            "http://wx4.sinaimg.cn/mw690/69267083gy1ffltpxv6rkj22b42vtqva.jpg",
+            "http://wx3.sinaimg.cn/mw690/69267083gy1ffluiltyqyj224x2o3qv7.jpg"
+    };
 
     private RecyclerView mRecyclerView;
     private Adapter mAdapter;
@@ -46,26 +60,26 @@ public class MultiPhotoActivity extends AppCompatActivity {
         mAdapter = new Adapter();
         mAdapter.mPhotos = new ArrayList<>();
         for (int i = 0; i < 5; i++) {
-            mAdapter.mPhotos.add(new Photo(R.color.color1));
-            mAdapter.mPhotos.add(new Photo(R.color.color2));
-            mAdapter.mPhotos.add(new Photo(R.color.color3));
-            mAdapter.mPhotos.add(new Photo(R.color.color4));
-            mAdapter.mPhotos.add(new Photo(R.color.color5));
-            mAdapter.mPhotos.add(new Photo(R.color.color6));
-            mAdapter.mPhotos.add(new Photo(R.color.color7));
+            for (String s : ADDRESS) {
+                mAdapter.mPhotos.add(new Photo(s));
+            }
         }
 
         mRecyclerView.setAdapter(mAdapter);
 
         mPhotoBrowser = new PhotoBrowser(this);
         mPhotoBrowser.setData(mAdapter.mPhotos);
-        mPhotoBrowser.initAnimator(mRecyclerView, new SimpleTracker() {
+
+        mPhotoBrowser.initAnimator(GestureTransitions.from(new ViewsTransitionAnimator.RequestListener<Integer>() {
             @Override
-            protected View getViewAt(int position) {
+            public void onRequestView(@NonNull Integer position) {
                 Holder holder = (Holder) mRecyclerView.findViewHolderForLayoutPosition(position);
-                return holder == null ? null : holder.mImageView;
+                ImageView imageView = holder == null ? null : holder.mImageView;
+                if (imageView != null) {
+                    getAnimator().setFromView(position, imageView);
+                }
             }
-        });
+        }));
 
         mFlContainer = (FrameLayout) ((ViewGroup) ((ViewGroup) getWindow().getDecorView()).getChildAt(0)).getChildAt(1);
         mFlContainer.addView(mPhotoBrowser);
@@ -81,14 +95,14 @@ public class MultiPhotoActivity extends AppCompatActivity {
         }
 
         @Override
-        public void onBindViewHolder(Holder holder, final int position) {
-//            holder.mImageView.setImageResource(mPhotos.get(position).res);
-            holder.mImageView.setImageResource(R.drawable.img);
+        public void onBindViewHolder(final Holder holder, int position) {
+            holder.mImageView.setImageURI(mPhotos.get(position).url);
+//            holder.mImageView.setImageResource(R.drawable.img);
             holder.mImageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
                     mPhotoBrowser.setVisibility(View.VISIBLE);
-                    mPhotoBrowser.show(position);
+                    mPhotoBrowser.show(holder.getAdapterPosition());
                 }
             });
         }
@@ -100,11 +114,11 @@ public class MultiPhotoActivity extends AppCompatActivity {
     }
 
     class Holder extends RecyclerView.ViewHolder {
-        ImageView mImageView;
+        SimpleDraweeView mImageView;
 
         public Holder(ViewGroup parent) {
             super(LayoutInflater.from(parent.getContext()).inflate(R.layout.item_small, parent, false));
-            mImageView = (ImageView) itemView.findViewById(R.id.cross_to);
+            mImageView = (SimpleDraweeView) itemView.findViewById(R.id.cross_to);
         }
     }
 }

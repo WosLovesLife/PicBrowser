@@ -23,6 +23,7 @@ public class MainActivity extends BaseActivity {
         // Initializing views
         setContentView(R.layout.activity_main);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().hide();
         image = (ImageView) findViewById(R.id.cross_from);
 
         image.setOnClickListener(new View.OnClickListener() {

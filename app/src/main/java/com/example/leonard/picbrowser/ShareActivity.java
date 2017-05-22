@@ -2,13 +2,11 @@ package com.example.leonard.picbrowser;
 
 import android.app.Activity;
 import android.content.Intent;
-import android.graphics.drawable.ColorDrawable;
 import android.os.Bundle;
 import android.support.annotation.DrawableRes;
 import android.util.Log;
 import android.view.View;
 import android.view.ViewTreeObserver.OnPreDrawListener;
-import android.widget.FrameLayout;
 
 import com.alexvasilkov.events.Events;
 import com.alexvasilkov.gestures.animation.ViewPosition;
@@ -78,7 +76,7 @@ public class ShareActivity extends BaseActivity {
                     // By default end of exit animation will return GestureImageView into
                     // fullscreen state, this will make the image blink. So we need to hack this
                     // behaviour and keep image in exit state until activity is finished.
-                    image.getController().getSettings().disableBounds();
+                    image.getGestureController().getSettings().disableBounds();
                     image.getPositionAnimator().setState(0f, false, false);
 
                     // Finishing activity

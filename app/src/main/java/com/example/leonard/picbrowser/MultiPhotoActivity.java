@@ -1,20 +1,22 @@
 package com.example.leonard.picbrowser;
 
+import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.GridLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 
 import com.alexvasilkov.gestures.transition.GestureTransitions;
 import com.alexvasilkov.gestures.transition.ViewsTransitionAnimator;
-import com.alexvasilkov.gestures.views.GestureImageView;
 import com.facebook.drawee.view.SimpleDraweeView;
 
 import java.util.ArrayList;
@@ -38,12 +40,12 @@ public class MultiPhotoActivity extends AppCompatActivity {
 
     private RecyclerView mRecyclerView;
     private Adapter mAdapter;
-    private PhotoBrowser mPhotoBrowser;
     private FrameLayout mFlContainer;
+    private PhotoBrowserHelper mPhotoBrowserHelper;
 
     @Override
     public void onBackPressed() {
-        if (mPhotoBrowser == null || !mPhotoBrowser.onBackPressed()) {
+        if (mPhotoBrowserHelper == null || !mPhotoBrowserHelper.onBackPressed()) {
             super.onBackPressed();
         }
     }
@@ -67,23 +69,7 @@ public class MultiPhotoActivity extends AppCompatActivity {
 
         mRecyclerView.setAdapter(mAdapter);
 
-        mPhotoBrowser = new PhotoBrowser(this);
-        mPhotoBrowser.setData(mAdapter.mPhotos);
-
-        mPhotoBrowser.initAnimator(GestureTransitions.from(new ViewsTransitionAnimator.RequestListener<Integer>() {
-            @Override
-            public void onRequestView(@NonNull Integer position) {
-                Holder holder = (Holder) mRecyclerView.findViewHolderForLayoutPosition(position);
-                ImageView imageView = holder == null ? null : holder.mImageView;
-                if (imageView != null) {
-                    getAnimator().setFromView(position, imageView);
-                }
-            }
-        }));
-
         mFlContainer = (FrameLayout) ((ViewGroup) ((ViewGroup) getWindow().getDecorView()).getChildAt(0)).getChildAt(1);
-        mFlContainer.addView(mPhotoBrowser);
-        mPhotoBrowser.setVisibility(View.INVISIBLE);
     }
 
     class Adapter extends RecyclerView.Adapter<Holder> {
@@ -97,12 +83,14 @@ public class MultiPhotoActivity extends AppCompatActivity {
         @Override
         public void onBindViewHolder(final Holder holder, int position) {
             holder.mImageView.setImageURI(mPhotos.get(position).url);
-//            holder.mImageView.setImageResource(R.drawable.img);
             holder.mImageView.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    mPhotoBrowser.setVisibility(View.VISIBLE);
-                    mPhotoBrowser.show(holder.getAdapterPosition());
+                    if (mPhotoBrowserHelper == null) {
+                        mPhotoBrowserHelper = new PhotoBrowserHelper()
+                                .createPhotoBrowser(MultiPhotoActivity.this, mPhotos, mRecyclerView);
+                    }
+                    mPhotoBrowserHelper.show(mFlContainer, holder.getAdapterPosition());
                 }
             });
         }

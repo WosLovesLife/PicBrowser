@@ -6,10 +6,13 @@ import android.support.v4.view.ViewPager;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.View;
+import android.widget.ImageView;
 
 import com.alexvasilkov.gestures.animation.ViewPosition;
 import com.alexvasilkov.gestures.internal.GestureDebug;
 import com.alexvasilkov.gestures.views.interfaces.AnimatorView;
+import com.facebook.drawee.drawable.ScalingUtils;
+import com.facebook.drawee.view.SimpleDraweeView;
 
 /**
  * Main purpose of this class is to synchronize views of same item in two different sources
@@ -133,6 +136,27 @@ public class ViewsCoordinator<ID> {
         }
         if (this.fromView == fromView && fromView != null) {
             return; // Already set
+        }
+
+        // TODO: 17/5/22 将Fresco的ScaleType转成ImageView的ScaleType
+        if (fromView instanceof SimpleDraweeView) {
+            SimpleDraweeView imageView = (SimpleDraweeView) fromView;
+            ScalingUtils.ScaleType scaleType = imageView.getHierarchy().getActualImageScaleType();
+            if (scaleType == ScalingUtils.ScaleType.CENTER_CROP) {
+                imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
+            } else if (scaleType == ScalingUtils.ScaleType.FIT_XY) {
+                imageView.setScaleType(ImageView.ScaleType.FIT_XY);
+            } else if (scaleType == ScalingUtils.ScaleType.CENTER) {
+                imageView.setScaleType(ImageView.ScaleType.CENTER);
+            } else if (scaleType == ScalingUtils.ScaleType.CENTER_INSIDE) {
+                imageView.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+            } else if (scaleType == ScalingUtils.ScaleType.FIT_START) {
+                imageView.setScaleType(ImageView.ScaleType.FIT_START);
+            } else if (scaleType == ScalingUtils.ScaleType.FIT_END) {
+                imageView.setScaleType(ImageView.ScaleType.FIT_END);
+            } else if (scaleType == ScalingUtils.ScaleType.FOCUS_CROP) {
+                imageView.setScaleType(ImageView.ScaleType.MATRIX);
+            }
         }
 
         if (GestureDebug.isDebugAnimator()) {

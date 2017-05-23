@@ -11,7 +11,6 @@ import android.view.ViewGroup;
 
 import com.alexvasilkov.gestures.animation.ViewPositionAnimator.PositionUpdateListener;
 import com.alexvasilkov.gestures.commons.RecyclePagerAdapter;
-import com.alexvasilkov.gestures.views.GestureImageView;
 
 import java.util.List;
 
@@ -104,12 +103,12 @@ public class PhotoPagerAdapter extends RecyclePagerAdapter<PhotoPagerAdapter.Vie
         holder.image.setImageDrawable(null);
     }
 
-    public static GestureImageView getGestureView(RecyclePagerAdapter.ViewHolder holder) {
+    public static GImageView getGestureView(RecyclePagerAdapter.ViewHolder holder) {
         return ((ViewHolder) holder).image;
     }
 
     class ViewHolder extends RecyclePagerAdapter.ViewHolder {
-        GestureImageView image;
+        GImageView image;
         View progress;
 
         boolean gesturesDisabled;
@@ -117,10 +116,10 @@ public class PhotoPagerAdapter extends RecyclePagerAdapter<PhotoPagerAdapter.Vie
         ViewHolder(ViewGroup parent) {
             super(LayoutInflater.from(parent.getContext()).inflate(R.layout.item, parent, false));
             progress = itemView.findViewById(R.id.pb);
-            image = (GestureImageView) itemView.findViewById(R.id.cross_to);
+            image = (GImageView) itemView.findViewById(R.id.cross_to);
             image.getGestureController().getSettings().enableGestures();
             image.getGestureController().enableScrollInViewPager(viewPager);
-            image.getGestureController().getSettings().setAnimationsDuration(3000);
+            image.getGestureController().getSettings().setAnimationsDuration(240);
             image.getGestureController().getSettings().setMaxZoom(10f).setDoubleTapZoom(3f);
             image.getPositionAnimator().addPositionUpdateListener(new PositionUpdateListener() {
                 @Override

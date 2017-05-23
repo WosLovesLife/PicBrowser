@@ -278,6 +278,7 @@ public class ViewPositionAnimator {
         fromView = from;
         fromPosHolder.init(from, fromPositionListener);
 //        from.setVisibility(View.INVISIBLE); // We don't want duplicate view during animation
+        // TODO: 17/5/22 使用Alpha替代Visibility
         from.setAlpha(0f);
     }
 
@@ -310,7 +311,7 @@ public class ViewPositionAnimator {
 
         if (fromView != null) {
 //            fromView.setVisibility(View.VISIBLE); // Switching back to visible
-            // // TODO: 17/5/22
+            // TODO: 17/5/22 使用Alpha替代Visibility
             fromView.setAlpha(1f);
         }
         if (toClipView != null) {

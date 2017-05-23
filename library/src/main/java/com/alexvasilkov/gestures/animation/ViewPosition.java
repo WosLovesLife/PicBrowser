@@ -112,7 +112,7 @@ public class ViewPosition {
                 int drawableWidth = drawable.getIntrinsicWidth();
                 int drawableHeight = drawable.getIntrinsicHeight();
 
-                // todo
+                // TODO: 17/5/22 如果是Fresco的控件,需要获取到其真实的Drawable大小
                 if (drawable instanceof RootDrawable) {
                     RootDrawable drawable1 = (RootDrawable) drawable;
                     Drawable drawable2 = drawable1.getDrawable();

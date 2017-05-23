@@ -12,6 +12,7 @@ import android.util.AttributeSet;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.widget.FrameLayout;
+import android.widget.PopupWindow;
 
 import com.alexvasilkov.gestures.animation.ViewPositionAnimator.PositionUpdateListener;
 import com.alexvasilkov.gestures.commons.DepthPageTransformer;
@@ -100,7 +101,9 @@ public class PhotoBrowser extends FrameLayout {
                 mBgView.setVisibility(position == 0f ? View.INVISIBLE : View.VISIBLE);
                 mBgView.getBackground().setAlpha((int) (255 * position));
                 if (isLeaving && position == 0f) {
-                    pagerAdapter.setActivated(false);
+                    if (mHelper != null) {
+                        mHelper.onDismiss();
+                    }
                 }
             }
         });
@@ -153,5 +156,15 @@ public class PhotoBrowser extends FrameLayout {
         }
         return bitmap;
 
+    }
+
+    Helper mHelper;
+
+    public void setHelper(Helper helper) {
+        mHelper = helper;
+    }
+
+    public interface Helper {
+        void onDismiss();
     }
 }
